@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>সংসার খরচের হিসাব</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+  :root {
+    --primary: #1a6b3c; --primary-light: #2d9e5f; --primary-dark: #0f4a28;
+    --accent: #f0a500; --accent-light: #ffc940;
+    --danger: #e03c3c; --danger-light: #ff6b6b;
+    --bg: #f0f5f1; --card: #ffffff; --text: #1a2e22;
+    --text-muted: #6b8a75; --border: #c8dfd0;
+    --income-color: #1a6b3c; --expense-color: #e03c3c;
+    --shadow: 0 4px 20px rgba(26,107,60,0.10);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:'Hind Siliguri',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; max-width:480px; margin:0 auto; padding-bottom:80px; }
+  .app-header { background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary) 60%,var(--primary-light) 100%); color:white; padding:20px 16px 16px; position:sticky; top:0; z-index:100; box-shadow:0 3px 15px rgba(0,0,0,0.25); }
+  .header-top { display:flex; justify-content:space-between; align-items:center; }
+  .app-title { font-size:20px; font-weight:700; letter-spacing:0.5px; }
+  .app-subtitle { font-size:12px; opacity:0.8; margin-top:2px; }
+  .header-month { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); border-radius:20px; padding:6px 14px; font-size:14px; font-family:'Hind Siliguri',sans-serif; color:white; cursor:pointer; display:flex; align-items:center; gap:6px; }
+  .month-summary { background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%); padding:12px 16px; display:flex; justify-content:space-around; gap:8px; }
+  .sum-card { background:rgba(255,255,255,0.12); border-radius:12px; padding:10px 14px; text-align:center; flex:1; border:1px solid rgba(255,255,255,0.2); }
+  .sum-label { font-size:10px; color:rgba(255,255,255,0.8); }
+  .sum-amount { font-size:16px; font-weight:700; color:white; margin-top:2px; }
+  .sum-amount.income { color:#a8f0c0; }
+  .sum-amount.expense { color:#ffb3b3; }
+  .sum-amount.balance.positive { color:#a8f0c0; }
+  .sum-amount.balance.negative { color:#ffb3b3; }
+  .bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; background:white; display:flex; border-top:2px solid var(--border); z-index:200; box-shadow:0 -4px 20px rgba(0,0,0,0.1); }
+  .nav-btn { flex:1; padding:10px 4px 8px; text-align:center; cursor:pointer; border:none; background:none; color:var(--text-muted); font-family:'Hind Siliguri',sans-serif; font-size:10px; transition:all 0.2s; }
+  .nav-btn.active { color:var(--primary); }
+  .nav-btn .icon { font-size:22px; display:block; margin-bottom:2px; }
+  .nav-btn.active .icon { transform:scale(1.1); }
+  .page { display:none; padding:16px; }
+  .page.active { display:block; }
+  .section-title { font-size:16px; font-weight:700; color:var(--primary-dark); margin-bottom:12px; padding-bottom:6px; border-bottom:2px solid var(--border); display:flex; align-items:center; gap:8px; }
+  .form-card { background:var(--card); border-radius:16px; padding:18px; box-shadow:var(--shadow); border:1px solid var(--border); margin-bottom:16px; }
+  .form-row { margin-bottom:14px; }
+  .form-label { font-size:13px; color:var(--text-muted); margin-bottom:5px; display:block; font-weight:500; }
+  .form-input, .form-select { width:100%; padding:12px 14px; border:2px solid var(--border); border-radius:10px; font-family:'Hind Siliguri',sans-serif; font-size:15px; color:var(--text); background:var(--bg); transition:border-color 0.2s; -webkit-appearance:none; }
+  .form-input:focus, .form-select:focus { outline:none; border-color:var(--primary-light); background:white; }
+  .form-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .type-toggle { display:flex; gap:8px; margin-bottom:14px; }
+  .type-btn { flex:1; padding:10px; border:2px solid var(--border); border-radius:10px; background:var(--bg); font-family:'Hind Siliguri',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .type-btn.income.active { background:var(--income-color); color:white; border-color:var(--income-color); }
+  .type-btn.expense.active { background:var(--expense-color); color:white; border-color:var(--expense-color); }
+  .submit-btn { width:100%; padding:14px; background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%); color:white; border:none; border-radius:12px; font-family:'Hind Siliguri',sans-serif; font-size:16px; font-weight:700; cursor:pointer; letter-spacing:0.5px; box-shadow:0 4px 15px rgba(26,107,60,0.3); transition:transform 0.1s,box-shadow 0.1s; }
+  .submit-btn:active { transform:scale(0.98); box-shadow:none; }
+  .cancel-edit-btn { width:100%; padding:12px; background:var(--bg); color:var(--text-muted); border:2px solid var(--border); border-radius:12px; font-family:'Hind Siliguri',sans-serif; font-size:15px; font-weight:600; cursor:pointer; margin-top:8px; display:none; }
+  .tx-item { background:var(--card); border-radius:14px; padding:14px 16px; margin-bottom:10px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 10px rgba(0,0,0,0.06); border:1px solid var(--border); position:relative; animation:slideIn 0.25s ease; }
+  @keyframes slideIn { from{opacity:0;transform:translateY(-8px);} to{opacity:1;transform:translateY(0);} }
+  .tx-icon { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+  .tx-icon.income { background:#e6f7ee; }
+  .tx-icon.expense { background:#fde8e8; }
+  .tx-info { flex:1; min-width:0; }
+  .tx-category { font-size:14px; font-weight:600; color:var(--text); }
+  .tx-note { font-size:12px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tx-date { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .tx-right { text-align:right; flex-shrink:0; }
+  .tx-amount { font-size:16px; font-weight:700; }
+  .tx-amount.income { color:var(--income-color); }
+  .tx-amount.expense { color:var(--expense-color); }
+  .tx-actions { display:flex; gap:4px; justify-content:flex-end; margin-top:4px; }
+  .tx-edit { background:none; border:none; color:#bbb; font-size:17px; cursor:pointer; padding:4px; line-height:1; }
+  .tx-edit:active { color:var(--primary); }
+  .tx-delete { background:none; border:none; color:#bbb; font-size:17px; cursor:pointer; padding:4px; line-height:1; }
+  .tx-delete:active { color:var(--danger); }
+  .filter-row { display:flex; gap:8px; margin-bottom:14px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+  .filter-row::-webkit-scrollbar { display:none; }
+  .filter-chip { padding:6px 14px; border:2px solid var(--border); border-radius:20px; font-family:'Hind Siliguri',sans-serif; font-size:12px; cursor:pointer; white-space:nowrap; background:white; color:var(--text-muted); font-weight:500; transition:all 0.2s; }
+  .filter-chip.active { background:var(--primary); color:white; border-color:var(--primary); }
+  .summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  .summary-item { background:var(--card); border-radius:14px; padding:16px 14px; box-shadow:var(--shadow); border:1px solid var(--border); }
+  .summary-item.full { grid-column:1/-1; }
+  .si-label { font-size:12px; color:var(--text-muted); font-weight:500; }
+  .si-value { font-size:22px; font-weight:700; margin-top:4px; }
+  .si-value.income { color:var(--income-color); }
+  .si-value.expense { color:var(--expense-color); }
+  .si-value.positive { color:var(--income-color); }
+  .si-value.negative { color:var(--expense-color); }
+  .cat-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .cat-item:last-child { border-bottom:none; }
+  .cat-dot { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; background:var(--bg); flex-shrink:0; }
+  .cat-name { flex:1; font-size:14px; font-weight:500; }
+  .cat-count { font-size:11px; color:var(--text-muted); }
+  .cat-amount { font-size:15px; font-weight:700; color:var(--expense-color); }
+  .cat-bar-wrap { height:5px; background:var(--border); border-radius:10px; margin-top:3px; overflow:hidden; }
+  .cat-bar { height:100%; background:var(--primary-light); border-radius:10px; transition:width 0.5s ease; }
+  .month-hist-item { background:var(--card); border-radius:14px; padding:16px; margin-bottom:10px; box-shadow:var(--shadow); border:1px solid var(--border); }
+  .mh-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .mh-month { font-size:16px; font-weight:700; color:var(--primary-dark); }
+  .mh-balance { font-size:15px; font-weight:700; }
+  .mh-row { display:flex; justify-content:space-between; margin-top:6px; }
+  .mh-label { font-size:12px; color:var(--text-muted); }
+  .mh-val { font-size:13px; font-weight:600; }
+  .mh-bar { display:flex; gap:4px; margin-top:8px; height:6px; border-radius:10px; overflow:hidden; }
+  .mh-income-bar { background:var(--income-color); border-radius:10px; transition:flex 0.5s; }
+  .mh-expense-bar { background:var(--expense-color); border-radius:10px; transition:flex 0.5s; }
+  .empty-state { text-align:center; padding:40px 20px; color:var(--text-muted); }
+  .empty-state .icon { font-size:48px; margin-bottom:12px; }
+  .empty-state p { font-size:14px; }
+  .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:var(--primary-dark); color:white; padding:12px 24px; border-radius:25px; font-size:14px; font-weight:600; z-index:1000; opacity:0; transition:opacity 0.3s; white-space:nowrap; pointer-events:none; }
+  .toast.show { opacity:1; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; display:flex; align-items:flex-end; justify-content:center; }
+  .modal { background:white; border-radius:20px 20px 0 0; padding:20px; width:100%; max-width:480px; max-height:70vh; overflow-y:auto; }
+  .modal-title { font-size:18px; font-weight:700; margin-bottom:16px; color:var(--primary-dark); }
+  .modal-close { float:right; background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); margin-top:-4px; }
+  .search-bar { position:relative; margin-bottom:12px; }
+  .search-bar input { width:100%; padding:11px 14px 11px 40px; border:2px solid var(--border); border-radius:10px; font-family:'Hind Siliguri',sans-serif; font-size:14px; background:white; }
+  .search-bar input:focus { outline:none; border-color:var(--primary-light); }
+  .search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:18px; color:var(--text-muted); }
+  .income-badge { display:inline-block; background:#e6f7ee; color:var(--income-color); font-size:10px; padding:2px 6px; border-radius:6px; font-weight:600; margin-left:4px; }
+  .no-results { text-align:center; color:var(--text-muted); padding:24px; font-size:14px; }
+
+  /* Custom Confirm Modal */
+  .confirm-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9000; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .confirm-box { background:white; border-radius:20px; padding:24px 20px 20px; width:100%; max-width:320px; box-shadow:0 10px 40px rgba(0,0,0,0.2); }
+  .confirm-icon { font-size:40px; text-align:center; margin-bottom:10px; }
+  .confirm-msg { font-size:16px; font-weight:600; color:var(--text); text-align:center; margin-bottom:20px; line-height:1.5; }
+  .confirm-btns { display:flex; gap:10px; }
+  .confirm-yes { flex:1; padding:13px; background:var(--danger); color:white; border:none; border-radius:12px; font-family:'Hind Siliguri',sans-serif; font-size:15px; font-weight:700; cursor:pointer; }
+  .confirm-no { flex:1; padding:13px; background:var(--bg); color:var(--text); border:2px solid var(--border); border-radius:12px; font-family:'Hind Siliguri',sans-serif; font-size:15px; font-weight:700; cursor:pointer; }
+
+  /* Edit mode banner */
+  .edit-banner { background:#fff8e6; border:2px solid var(--accent); border-radius:12px; padding:10px 14px; margin-bottom:12px; display:none; font-size:13px; color:#7a5c00; font-weight:600; }
+
+  #print-overlay { display:none; position:fixed; inset:0; background:white; z-index:9999; flex-direction:column; overflow-y:auto; }
+  .print-toolbar { position:sticky; top:0; background:#0f4a28; padding:10px 14px; display:flex; gap:10px; align-items:center; z-index:10000; box-shadow:0 2px 10px rgba(0,0,0,0.3); }
+  .print-toolbar-title { flex:1; color:white; font-size:15px; font-weight:700; }
+  .ptbtn { padding:9px 16px; border:none; border-radius:8px; font-family:'Hind Siliguri',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
+  .ptbtn-copy { background:#1a6b3c; color:white; }
+  .ptbtn-browser { background:#f0a500; color:white; }
+  .ptbtn-close { background:rgba(255,255,255,0.2); color:white; }
+  #rpt-body { padding:16px; max-width:800px; margin:0 auto; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="header-top">
+    <div style="display:flex;align-items:center;">
+      <div style="width:44px;height:44px;border-radius:12px;margin-right:10px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:24px;">🏠</div>
+      <div>
+        <div class="app-title">সংসার হিসাব</div>
+        <div class="app-subtitle">পারিবারিক আয়-ব্যয় ব্যবস্থাপনা</div>
+      </div>
+    </div>
+    <button class="header-month" onclick="openMonthPicker()">
+      <span id="current-month-label">মাস বেছে নিন</span> ▾
+    </button>
+  </div>
+</div>
+
+<div class="month-summary">
+  <div class="sum-card"><div class="sum-label">আয়</div><div class="sum-amount income" id="hdr-income">৳০</div></div>
+  <div class="sum-card"><div class="sum-label">খরচ</div><div class="sum-amount expense" id="hdr-expense">৳০</div></div>
+  <div class="sum-card"><div class="sum-label">ব্যালেন্স</div><div class="sum-amount balance" id="hdr-balance">৳০</div></div>
+</div>
+
+<!-- PAGE 1: ADD -->
+<div class="page active" id="page-add">
+  <div class="form-card">
+    <div class="section-title">➕ নতুন এন্ট্রি যোগ করুন</div>
+    <div class="edit-banner" id="edit-banner">✏️ এডিট মোড চালু আছে</div>
+    <div class="type-toggle">
+      <button class="type-btn expense active" id="btn-expense" onclick="setType('expense')">💸 খরচ</button>
+      <button class="type-btn income" id="btn-income" onclick="setType('income')">💰 আয়</button>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row">
+        <label class="form-label">তারিখ</label>
+        <input type="date" class="form-input" id="entry-date">
+      </div>
+      <div class="form-row">
+        <label class="form-label">পরিমাণ (টাকা)</label>
+        <input type="number" class="form-input" id="entry-amount" placeholder="০.০০" min="0" step="1">
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label" id="cat-label">খরচের খাত</label>
+      <select class="form-select" id="entry-category"><option value="">-- বেছে নিন --</option></select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">বিবরণ / নোট</label>
+      <input type="text" class="form-input" id="entry-note" placeholder="ঐচ্ছিক বিবরণ...">
+    </div>
+    <button class="submit-btn" id="submit-btn" onclick="saveEntry()">✅ সংরক্ষণ করুন</button>
+    <button class="cancel-edit-btn" id="cancel-edit-btn" onclick="cancelEdit()">✕ বাতিল করুন</button>
+  </div>
+  <div class="section-title">🕐 সাম্প্রতিক এন্ট্রি</div>
+  <div id="recent-list"></div>
+</div>
+
+<!-- PAGE 2: HISTORY -->
+<div class="page" id="page-history">
+  <div class="section-title">📋 সম্পূর্ণ ইতিহাস</div>
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search-input" placeholder="খুঁজুন..." oninput="filterHistory()">
+  </div>
+  <div class="filter-row" id="filter-row">
+    <div class="filter-chip active" onclick="setFilter('all',this)">সব</div>
+    <div class="filter-chip" onclick="setFilter('income',this)">আয়</div>
+    <div class="filter-chip" onclick="setFilter('expense',this)">খরচ</div>
+  </div>
+  <div id="history-list"></div>
+</div>
+
+<!-- PAGE 3: SUMMARY -->
+<div class="page" id="page-summary">
+  <div class="section-title">📊 মাসিক সারসংক্ষেপ</div>
+  <div class="summary-grid" id="summary-grid"></div>
+  <div class="form-card">
+    <div class="section-title">🗂️ খাত অনুযায়ী খরচ</div>
+    <div id="cat-breakdown"></div>
+  </div>
+</div>
+
+<!-- PAGE 4: MONTHLY -->
+<div class="page" id="page-monthly">
+  <div class="section-title">📅 মাসভিত্তিক রিপোর্ট</div>
+  <div id="monthly-list"></div>
+</div>
+
+<!-- PAGE 5: PDF -->
+<div class="page" id="page-pdf">
+  <div class="section-title">📄 PDF রিপোর্ট তৈরি করুন</div>
+  <div class="form-card">
+    <div class="form-row">
+      <label class="form-label">মাস নির্বাচন করুন</label>
+      <select class="form-select" id="pdf-month-sel" onchange="showPDFPreview()"></select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">রিপোর্টে কী অন্তর্ভুক্ত করবেন</label>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px;">
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;"><input type="checkbox" id="pdf-opt-summary" checked style="width:18px;height:18px;accent-color:var(--primary)"> মাসিক আয়-ব্যয় সারাংশ</label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;"><input type="checkbox" id="pdf-opt-cat" checked style="width:18px;height:18px;accent-color:var(--primary)"> খাত অনুযায়ী মোট খরচ</label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;"><input type="checkbox" id="pdf-opt-detail" checked style="width:18px;height:18px;accent-color:var(--primary)"> বিস্তারিত লেনদেনের তালিকা</label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;"><input type="checkbox" id="pdf-opt-income" checked style="width:18px;height:18px;accent-color:var(--primary)"> আয়ের বিস্তারিত তালিকা</label>
+      </div>
+    </div>
+    <button class="submit-btn" onclick="generatePDF()">📥 A4 PDF তৈরি ও ডাউনলোড করুন</button>
+  </div>
+  <div class="form-card" id="pdf-preview-card" style="display:none;">
+    <div class="section-title">👁️ প্রিভিউ</div>
+    <div id="pdf-preview-content"></div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showPage('add',this)"><span class="icon">➕</span>এন্ট্রি</button>
+  <button class="nav-btn" onclick="showPage('history',this)"><span class="icon">📋</span>ইতিহাস</button>
+  <button class="nav-btn" onclick="showPage('summary',this)"><span class="icon">📊</span>সারাংশ</button>
+  <button class="nav-btn" onclick="showPage('monthly',this)"><span class="icon">📅</span>মাসওয়ারি</button>
+  <button class="nav-btn" onclick="showPage('pdf',this)"><span class="icon">📄</span>PDF</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<!-- Custom Confirm Modal -->
+<div class="confirm-modal-overlay" id="confirm-modal" style="display:none;">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-msg" id="confirm-msg">এই এন্ট্রি মুছে দিতে চান?</div>
+    <div class="confirm-btns">
+      <button class="confirm-yes" onclick="_confirmYes()">হ্যাঁ, মুছুন</button>
+      <button class="confirm-no" onclick="_confirmNo()">না, রাখুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- Print Overlay -->
+<div id="print-overlay">
+  <div class="print-toolbar">
+    <div class="print-toolbar-title">📄 রিপোর্ট প্রিভিউ</div>
+    <button class="ptbtn ptbtn-copy" onclick="copyReportText()">📋 কপি</button>
+    <button class="ptbtn ptbtn-browser" onclick="openInBrowser()">📥 PDF সেভ</button>
+    <button class="ptbtn ptbtn-close" onclick="closePrintOverlay()">✕ বন্ধ</button>
+  </div>
+  <div id="rpt-body"></div>
+</div>
+
+<!-- Category Detail Modal -->
+<div class="modal-overlay" id="cat-detail-modal" style="display:none" onclick="if(event.target===this)closeCatDetail()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeCatDetail()">✕</button>
+    <div class="modal-title" id="cat-detail-title">খাতের বিস্তারিত</div>
+    <div id="cat-detail-list"></div>
+    <div id="cat-detail-total" style="margin-top:12px;padding-top:12px;border-top:2px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:15px;"></div>
+  </div>
+</div>
+
+<!-- Month Picker Modal -->
+<div class="modal-overlay" id="month-modal" style="display:none" onclick="if(event.target===this)closeMonthPicker()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeMonthPicker()">✕</button>
+    <div class="modal-title">📅 মাস নির্বাচন করুন</div>
+    <div id="month-picker-list"></div>
+  </div>
+</div>
+
+<script>
+const EXPENSE_CATEGORIES = [
+  {id:'food',name:'খাবার',icon:'🍚'},{id:'grocery',name:'বাজার',icon:'🛒'},
+  {id:'rent',name:'বাড়ি ভাড়া',icon:'🏠'},{id:'utility',name:'বিদ্যুৎ/গ্যাস/পানি',icon:'💡'},
+  {id:'education',name:'পড়াশোনা',icon:'📚'},{id:'medical',name:'চিকিৎসা',icon:'🏥'},
+  {id:'transport',name:'যানবাহন',icon:'🚌'},{id:'clothing',name:'পোশাক',icon:'👗'},
+  {id:'mobile',name:'মোবাইল রিচার্জ',icon:'📱'},{id:'internet',name:'ইন্টারনেট',icon:'📶'},
+  {id:'repair',name:'মেরামত',icon:'🔧'},{id:'entertainment',name:'বিনোদন',icon:'🎉'},
+  {id:'savings',name:'সঞ্চয়',icon:'🐷'},{id:'loan',name:'ঋণ পরিশোধ',icon:'💳'},
+  {id:'other_expense',name:'অন্যান্য খরচ',icon:'📦'},
+];
+const INCOME_CATEGORIES = [
+  {id:'salary',name:'বেতন',icon:'💼'},{id:'business',name:'ব্যবসা',icon:'🏪'},
+  {id:'freelance',name:'ফ্রিল্যান্স',icon:'💻'},{id:'rent_income',name:'ভাড়া আয়',icon:'🏘️'},
+  {id:'investment',name:'বিনিয়োগ লাভ',icon:'📈'},{id:'gift',name:'উপহার/দান',icon:'🎁'},
+  {id:'other_income',name:'অন্যান্য আয়',icon:'💵'},
+];
+
+let currentType = 'expense';
+let currentFilter = 'all';
+let currentMonth = '';
+let searchTerm = '';
+let currentEditId = null;
+let _confirmCallback = null;
+
+function loadData() { try { return JSON.parse(localStorage.getItem('sangsar_entries')||'[]'); } catch(e) { return []; } }
+function saveData(d) { localStorage.setItem('sangsar_entries', JSON.stringify(d)); }
+
+window.onload = function() {
+  const today = new Date();
+  document.getElementById('entry-date').value = today.toISOString().split('T')[0];
+  currentMonth = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+  updateMonthLabel();
+  updateCategories();
+  refresh();
+};
+
+function formatTaka(n) { return '৳'+Math.abs(n).toLocaleString('bn-BD'); }
+
+function toBengaliDate(dateStr) {
+  const d = new Date(dateStr+'T00:00:00');
+  const bn = ['রবি','সোম','মঙ্গল','বুধ','বৃহ','শুক্র','শনি'];
+  const months = ['জানু','ফেব্রু','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টে','অক্টো','নভে','ডিসে'];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} (${bn[d.getDay()]})`;
+}
+
+function getMonthLabel(ym) {
+  const [y,m] = ym.split('-');
+  const months = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+  return `${months[parseInt(m)-1]} ${y}`;
+}
+function updateMonthLabel() { document.getElementById('current-month-label').textContent = getMonthLabel(currentMonth); }
+
+function setType(type) {
+  currentType = type;
+  document.getElementById('btn-expense').className = 'type-btn expense'+(type==='expense'?' active':'');
+  document.getElementById('btn-income').className = 'type-btn income'+(type==='income'?' active':'');
+  document.getElementById('cat-label').textContent = type==='expense'?'খরচের খাত':'আয়ের উৎস';
+  updateCategories();
+}
+function updateCategories() {
+  const sel = document.getElementById('entry-category');
+  const cats = currentType==='expense'?EXPENSE_CATEGORIES:INCOME_CATEGORIES;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">-- বেছে নিন --</option>';
+  cats.forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.icon} ${c.name}</option>`; });
+  if (prev) sel.value = prev;
+}
+function getCategoryInfo(id, type) {
+  const cats = type==='income'?INCOME_CATEGORIES:EXPENSE_CATEGORIES;
+  return cats.find(c=>c.id===id)||{name:id,icon:'📌'};
+}
+
+// ===== Custom Confirm =====
+function showConfirm(msg, cb) {
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-modal').style.display = 'flex';
+  _confirmCallback = cb;
+}
+function _confirmYes() {
+  document.getElementById('confirm-modal').style.display = 'none';
+  if (_confirmCallback) _confirmCallback();
+  _confirmCallback = null;
+}
+function _confirmNo() {
+  document.getElementById('confirm-modal').style.display = 'none';
+  _confirmCallback = null;
+}
+
+function saveEntry() {
+  const date = document.getElementById('entry-date').value;
+  const amount = parseFloat(document.getElementById('entry-amount').value);
+  const category = document.getElementById('entry-category').value;
+  const note = document.getElementById('entry-note').value.trim();
+
+  if (!date||!amount||amount<=0) { showToast('তারিখ ও পরিমাণ দিন'); return; }
+  if (!category) { showToast('খাত বেছে নিন'); return; }
+
+  let entries = loadData();
+
+  if (currentEditId) {
+    const idx = entries.findIndex(e=>e.id===currentEditId);
+    if (idx !== -1) {
+      entries[idx] = {...entries[idx], type:currentType, date, amount, category, note};
+    }
+    cancelEdit();
+    showToast('✅ আপডেট হয়েছে!');
+  } else {
+    entries.unshift({id:Date.now().toString(), type:currentType, date, amount, category, note});
+    showToast('✅ সফলভাবে সংরক্ষিত হয়েছে!');
+  }
+
+  saveData(entries);
+  document.getElementById('entry-amount').value = '';
+  document.getElementById('entry-category').value = '';
+  document.getElementById('entry-note').value = '';
+  document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+  currentMonth = date.slice(0,7);
+  updateMonthLabel();
+  refresh();
+}
+
+function deleteEntry(id) {
+  showConfirm('এই এন্ট্রি মুছে দিতে চান?', () => {
+    let entries = loadData();
+    entries = entries.filter(e=>e.id!==id);
+    saveData(entries);
+    refresh();
+    showToast('🗑️ মুছে দেওয়া হয়েছে');
+  });
+}
+
+function editEntry(id) {
+  const entries = loadData();
+  const entry = entries.find(e=>e.id===id);
+  if (!entry) return;
+
+  currentEditId = id;
+  setType(entry.type);
+  document.getElementById('entry-date').value = entry.date;
+  document.getElementById('entry-amount').value = entry.amount;
+  updateCategories();
+  document.getElementById('entry-category').value = entry.category;
+  document.getElementById('entry-note').value = entry.note||'';
+
+  document.getElementById('submit-btn').textContent = '💾 আপডেট করুন';
+  document.getElementById('cancel-edit-btn').style.display = 'block';
+  document.getElementById('edit-banner').style.display = 'block';
+
+  showPage('add', document.querySelectorAll('.nav-btn')[0]);
+  window.scrollTo(0,0);
+  showToast('✏️ এন্ট্রি এডিট করুন');
+}
+
+function cancelEdit() {
+  currentEditId = null;
+  document.getElementById('submit-btn').textContent = '✅ সংরক্ষণ করুন';
+  document.getElementById('cancel-edit-btn').style.display = 'none';
+  document.getElementById('edit-banner').style.display = 'none';
+  document.getElementById('entry-amount').value = '';
+  document.getElementById('entry-category').value = '';
+  document.getElementById('entry-note').value = '';
+  document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+  setType('expense');
+}
+
+function buildTxItem(e) {
+  const cat = getCategoryInfo(e.category, e.type);
+  const isIncome = e.type==='income';
+  return `
+  <div class="tx-item" id="tx-${e.id}">
+    <div class="tx-icon ${e.type}">${cat.icon}</div>
+    <div class="tx-info">
+      <div class="tx-category">${cat.name}${isIncome?'<span class="income-badge">আয়</span>':''}</div>
+      <div class="tx-note">${e.note||'—'}</div>
+      <div class="tx-date">${toBengaliDate(e.date)}</div>
+    </div>
+    <div class="tx-right">
+      <div class="tx-amount ${e.type}">${isIncome?'+':'-'}${formatTaka(e.amount)}</div>
+      <div class="tx-actions">
+        <button class="tx-edit" onclick="editEntry('${e.id}')">✏️</button>
+        <button class="tx-delete" onclick="deleteEntry('${e.id}')">🗑️</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function refresh() {
+  const allEntries = loadData();
+  const monthEntries = allEntries.filter(e=>e.date.slice(0,7)===currentMonth);
+  const income = monthEntries.filter(e=>e.type==='income').reduce((s,e)=>s+e.amount,0);
+  const expense = monthEntries.filter(e=>e.type==='expense').reduce((s,e)=>s+e.amount,0);
+  const balance = income-expense;
+
+  document.getElementById('hdr-income').textContent = formatTaka(income);
+  document.getElementById('hdr-expense').textContent = formatTaka(expense);
+  const balEl = document.getElementById('hdr-balance');
+  balEl.textContent = (balance>=0?'+':'-')+formatTaka(balance);
+  balEl.className = 'sum-amount balance '+(balance>=0?'positive':'negative');
+
+  const recentEl = document.getElementById('recent-list');
+  const recent = monthEntries.slice(0,5);
+  recentEl.innerHTML = recent.length===0
+    ? `<div class="empty-state"><div class="icon">📭</div><p>এই মাসে কোনো এন্ট্রি নেই</p></div>`
+    : recent.map(buildTxItem).join('');
+
+  renderHistory(allEntries);
+  renderSummary(monthEntries, income, expense, balance);
+  renderMonthly(allEntries);
+}
+
+function filterHistory() {
+  searchTerm = document.getElementById('search-input').value.toLowerCase();
+  renderHistory(loadData());
+}
+function setFilter(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  filterHistory();
+}
+function renderHistory(allEntries) {
+  let entries = allEntries.filter(e=>e.date.slice(0,7)===currentMonth);
+  if (currentFilter==='income') entries = entries.filter(e=>e.type==='income');
+  else if (currentFilter==='expense') entries = entries.filter(e=>e.type==='expense');
+  if (searchTerm) {
+    entries = entries.filter(e=>{
+      const cat = getCategoryInfo(e.category,e.type);
+      return cat.name.includes(searchTerm)||(e.note&&e.note.toLowerCase().includes(searchTerm))||e.amount.toString().includes(searchTerm);
+    });
+  }
+  const el = document.getElementById('history-list');
+  el.innerHTML = entries.length===0
+    ? `<div class="no-results">কোনো এন্ট্রি পাওয়া যায়নি</div>`
+    : entries.map(buildTxItem).join('');
+}
+
+function renderSummary(monthEntries, income, expense, balance) {
+  const txCount = monthEntries.length;
+  const expArr = monthEntries.filter(e=>e.type==='expense');
+  const avgExpense = expArr.length>0?expense/expArr.length:0;
+  document.getElementById('summary-grid').innerHTML = `
+    <div class="summary-item"><div class="si-label">💰 মোট আয়</div><div class="si-value income">${formatTaka(income)}</div></div>
+    <div class="summary-item"><div class="si-label">💸 মোট খরচ</div><div class="si-value expense">${formatTaka(expense)}</div></div>
+    <div class="summary-item full"><div class="si-label">📊 নিট ব্যালেন্স</div><div class="si-value ${balance>=0?'positive':'negative'}">${balance>=0?'+':''}${formatTaka(balance)}</div></div>
+    <div class="summary-item"><div class="si-label">📝 মোট এন্ট্রি</div><div class="si-value" style="color:var(--primary)">${txCount}</div></div>
+    <div class="summary-item"><div class="si-label">📉 গড় খরচ</div><div class="si-value expense">${formatTaka(Math.round(avgExpense))}</div></div>`;
+
+  const catMap = {};
+  expArr.forEach(e=>{
+    if (!catMap[e.category]) catMap[e.category]={total:0,count:0};
+    catMap[e.category].total+=e.amount; catMap[e.category].count++;
+  });
+  const sorted = Object.entries(catMap).sort((a,b)=>b[1].total-a[1].total);
+  const maxVal = sorted[0]?.[1].total||1;
+  const breakdown = document.getElementById('cat-breakdown');
+  breakdown.innerHTML = sorted.length===0
+    ? '<div class="no-results">কোনো খরচ নেই</div>'
+    : sorted.map(([id,data])=>{
+        const cat = getCategoryInfo(id,'expense');
+        const pct = Math.round((data.total/maxVal)*100);
+        return `<div class="cat-item" onclick="showCatDetail('${id}')" style="cursor:pointer;"><div class="cat-dot">${cat.icon}</div><div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="cat-name">${cat.name}</div><div class="cat-count">${data.count} বার · বিস্তারিত দেখুন 👆</div></div><div class="cat-amount">${formatTaka(data.total)}</div></div><div class="cat-bar-wrap"><div class="cat-bar" style="width:${pct}%"></div></div></div></div>`;
+      }).join('');
+}
+
+function renderMonthly(allEntries) {
+  const monthMap = {};
+  allEntries.forEach(e=>{
+    const ym = e.date.slice(0,7);
+    if (!monthMap[ym]) monthMap[ym]={income:0,expense:0,count:0};
+    if (e.type==='income') monthMap[ym].income+=e.amount; else monthMap[ym].expense+=e.amount;
+    monthMap[ym].count++;
+  });
+  const sorted = Object.entries(monthMap).sort((a,b)=>b[0].localeCompare(a[0]));
+  const el = document.getElementById('monthly-list');
+  if (sorted.length===0) { el.innerHTML=`<div class="empty-state"><div class="icon">📭</div><p>কোনো ডাটা নেই</p></div>`; return; }
+  el.innerHTML = sorted.map(([ym,data])=>{
+    const balance = data.income-data.expense;
+    const total = data.income+data.expense||1;
+    const iFlx = Math.max(1,Math.round(data.income/total*100));
+    const eFlx = Math.max(1,Math.round(data.expense/total*100));
+    return `<div class="month-hist-item" onclick="selectMonth('${ym}')">
+      <div class="mh-header"><div class="mh-month">📅 ${getMonthLabel(ym)}</div><div class="mh-balance" style="color:${balance>=0?'var(--income-color)':'var(--expense-color)'}">${balance>=0?'+':''}${formatTaka(balance)}</div></div>
+      <div class="mh-row"><span class="mh-label">💰 আয়</span><span class="mh-val" style="color:var(--income-color)">${formatTaka(data.income)}</span></div>
+      <div class="mh-row"><span class="mh-label">💸 খরচ</span><span class="mh-val" style="color:var(--expense-color)">${formatTaka(data.expense)}</span></div>
+      <div class="mh-row"><span class="mh-label">📝 এন্ট্রি</span><span class="mh-val">${data.count}টি</span></div>
+      <div class="mh-bar"><div class="mh-income-bar" style="flex:${iFlx}"></div><div class="mh-expense-bar" style="flex:${eFlx}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function selectMonth(ym) {
+  currentMonth = ym; updateMonthLabel(); refresh();
+  showPage('summary', document.querySelectorAll('.nav-btn')[2]);
+}
+function openMonthPicker() {
+  const entries = loadData();
+  const months = new Set(entries.map(e=>e.date.slice(0,7)));
+  const today = new Date();
+  for (let i=0;i<6;i++) {
+    const d = new Date(today.getFullYear(),today.getMonth()-i,1);
+    months.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+  }
+  const sorted = [...months].sort((a,b)=>b.localeCompare(a));
+  document.getElementById('month-picker-list').innerHTML = sorted.map(ym=>`
+    <div onclick="pickMonth('${ym}')" style="padding:14px 8px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;align-items:center;${ym===currentMonth?'color:var(--primary);font-weight:700':''}">
+      <span>${getMonthLabel(ym)}</span>${ym===currentMonth?'<span>✓</span>':''}
+    </div>`).join('');
+  document.getElementById('month-modal').style.display = 'flex';
+}
+function pickMonth(ym) { currentMonth=ym; updateMonthLabel(); closeMonthPicker(); refresh(); }
+function closeMonthPicker() { document.getElementById('month-modal').style.display='none'; }
+
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  if (name!=='add') refresh();
+  if (name==='pdf') renderPDFPage();
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function renderPDFPage() {
+  const allEntries = loadData();
+  const months = new Set(allEntries.map(e=>e.date.slice(0,7)));
+  const today = new Date();
+  for (let i=0;i<12;i++) {
+    const d = new Date(today.getFullYear(),today.getMonth()-i,1);
+    months.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+  }
+  const sorted = [...months].sort((a,b)=>b.localeCompare(a));
+  const sel = document.getElementById('pdf-month-sel');
+  if (!sel) return;
+  sel.innerHTML = sorted.map(ym=>`<option value="${ym}" ${ym===currentMonth?'selected':''}>${getMonthLabel(ym)}</option>`).join('');
+  showPDFPreview();
+}
+function showPDFPreview() {
+  const sel = document.getElementById('pdf-month-sel'); if (!sel) return;
+  const ym = sel.value;
+  const entries = loadData().filter(e=>e.date.slice(0,7)===ym);
+  const income = entries.filter(e=>e.type==='income').reduce((s,e)=>s+e.amount,0);
+  const expense = entries.filter(e=>e.type==='expense').reduce((s,e)=>s+e.amount,0);
+  const balance = income-expense;
+  document.getElementById('pdf-preview-card').style.display = 'block';
+  document.getElementById('pdf-preview-content').innerHTML = `
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--text-muted)">মাস</span><span style="font-size:14px;font-weight:700;color:var(--primary-dark)">${getMonthLabel(ym)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--text-muted)">মোট আয়</span><span style="font-size:14px;font-weight:700;color:var(--income-color)">${formatTaka(income)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--text-muted)">মোট খরচ</span><span style="font-size:14px;font-weight:700;color:var(--expense-color)">${formatTaka(expense)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="font-size:13px;color:var(--text-muted)">ব্যালেন্স</span><span style="font-size:14px;font-weight:700;color:${balance>=0?'var(--income-color)':'var(--expense-color)'}">${balance>=0?'+':''}${formatTaka(balance)}</span></div>`;
+}
+
+function generatePDF() {
+  const sel = document.getElementById('pdf-month-sel');
+  const ym = sel.value;
+  const allEntries = loadData();
+  const entries = allEntries.filter(e=>e.date.slice(0,7)===ym).sort((a,b)=>a.date.localeCompare(b.date));
+  if (entries.length===0) { showToast('এই মাসে কোনো ডাটা নেই!'); return; }
+  const inclSummary = document.getElementById('pdf-opt-summary').checked;
+  const inclCat = document.getElementById('pdf-opt-cat').checked;
+  const inclDetail = document.getElementById('pdf-opt-detail').checked;
+  const inclIncome = document.getElementById('pdf-opt-income').checked;
+  const income = entries.filter(e=>e.type==='income').reduce((s,e)=>s+e.amount,0);
+  const expense = entries.filter(e=>e.type==='expense').reduce((s,e)=>s+e.amount,0);
+  const balance = income-expense;
+  const monthLabel = getMonthLabel(ym);
+  const today = new Date();
+  const dateStr = `${today.getDate()}/${today.getMonth()+1}/${today.getFullYear()}`;
+  const catMap = {};
+  entries.filter(e=>e.type==='expense').forEach(e=>{
+    if (!catMap[e.category]) catMap[e.category]={total:0,count:0};
+    catMap[e.category].total+=e.amount; catMap[e.category].count++;
+  });
+  const catSorted = Object.entries(catMap).sort((a,b)=>b[1].total-a[1].total);
+
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sangsar Hisab - ${monthLabel}</title>
+  <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;font-size:13px;color:#1e2e22;background:#fff;}.header{background:#1a6b3c;color:#fff;padding:16px;text-align:center;}.header h1{font-size:20px;margin-bottom:4px;}.header p{font-size:12px;opacity:.8;}.summary-boxes{display:flex;gap:8px;padding:12px;background:#f0faf4;}.box{flex:1;padding:10px;border-radius:8px;text-align:center;}.box-income{background:#e6f7ee;border:1px solid #a8d5be;}.box-expense{background:#fde8e8;border:1px solid #f5b8b8;}.box-balance{background:#e6f7ee;border:1px solid #a8d5be;}.box-label{font-size:11px;color:#666;margin-bottom:4px;}.box-amt{font-size:16px;font-weight:bold;}.inc{color:#1a6b3c;}.exp{color:#e03c3c;}.section{margin:0 12px 12px;}.sec-title{background:#e8f5ee;border-left:4px solid #1a6b3c;padding:6px 10px;font-weight:bold;font-size:13px;color:#0f4a28;margin-bottom:6px;}table{width:100%;border-collapse:collapse;font-size:12px;}th{background:#1a6b3c;color:#fff;padding:6px 8px;text-align:left;}th.r{text-align:right;}td{padding:5px 8px;border-bottom:1px solid #d4e8d8;}tr:nth-child(even) td{background:#f5fdf8;}td.r{text-align:right;}.total-row td{background:#e8f5ee!important;font-weight:bold;}.print-btn{display:block;width:calc(100% - 24px);margin:12px;padding:14px;background:#1a6b3c;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;text-align:center;}@media print{.print-btn{display:none!important;}body{font-size:11px;}}</style></head><body>`;
+  html += `<div class="header"><h1>📘 SANGSAR HISAB</h1><p>${monthLabel} | 📅 ${dateStr}</p></div>`;
+  html += `<button class="print-btn" onclick="window.print()">🖨️ প্রিন্ট / PDF সেভ করুন</button>`;
+  if (inclSummary) {
+    html += `<div class="summary-boxes"><div class="box box-income"><div class="box-label">মোট আয়</div><div class="box-amt inc">৳${income.toLocaleString()}</div></div><div class="box box-expense"><div class="box-label">মোট খরচ</div><div class="box-amt exp">৳${expense.toLocaleString()}</div></div><div class="box box-balance"><div class="box-label">ব্যালেন্স</div><div class="box-amt ${balance>=0?'inc':'exp'}">${balance>=0?'+':'-'}৳${Math.abs(balance).toLocaleString()}</div></div></div>`;
+  }
+  if (inclCat && catSorted.length>0) {
+    html += `<div class="section"><div class="sec-title">📂 খাত অনুযায়ী খরচ</div><table><tr><th>#</th><th>খাত</th><th class="r">বার</th><th class="r">পরিমাণ</th><th class="r">%</th></tr>`;
+    catSorted.forEach(([id,d],i)=>{
+      const cat = getCategoryInfo(id,'expense');
+      const pct = expense>0?((d.total/expense)*100).toFixed(1):'0.0';
+      html += `<tr><td>${i+1}</td><td>${cat.name}</td><td class="r">${d.count}</td><td class="r exp">৳${d.total.toLocaleString()}</td><td class="r">${pct}%</td></tr>`;
+    });
+    html += `<tr class="total-row"><td colspan="3">মোট</td><td class="r exp">৳${expense.toLocaleString()}</td><td class="r">100%</td></tr></table></div>`;
+  }
+  if (inclIncome) {
+    const incArr = entries.filter(e=>e.type==='income');
+    if (incArr.length>0) {
+      html += `<div class="section"><div class="sec-title">💵 আয়ের বিস্তারিত</div><table><tr><th>#</th><th>তারিখ</th><th>উৎস</th><th>বিবরণ</th><th class="r">৳</th></tr>`;
+      incArr.forEach((e,i)=>{ const cat=getCategoryInfo(e.category,'income'); html+=`<tr><td>${i+1}</td><td>${e.date}</td><td>${cat.name}</td><td>${e.note||'-'}</td><td class="r inc">+${e.amount.toLocaleString()}</td></tr>`; });
+      html += `<tr class="total-row"><td colspan="4">মোট আয়</td><td class="r inc">+৳${income.toLocaleString()}</td></tr></table></div>`;
+    }
+  }
+  if (inclDetail) {
+    const expArr = entries.filter(e=>e.type==='expense');
+    if (expArr.length>0) {
+      html += `<div class="section"><div class="sec-title">🛒 খরচের বিস্তারিত</div><table><tr><th>#</th><th>তারিখ</th><th>খাত</th><th>বিবরণ</th><th class="r">৳</th></tr>`;
+      expArr.forEach((e,i)=>{ const cat=getCategoryInfo(e.category,'expense'); html+=`<tr><td>${i+1}</td><td>${e.date}</td><td>${cat.name}</td><td>${e.note||'-'}</td><td class="r exp">-${e.amount.toLocaleString()}</td></tr>`; });
+      html += `<tr class="total-row"><td colspan="4">মোট খরচ</td><td class="r exp">-৳${expense.toLocaleString()}</td></tr></table></div>`;
+    }
+  }
+  html += `<button class="print-btn" onclick="window.print()">🖨️ প্রিন্ট / PDF সেভ করুন</button></body></html>`;
+
+  window._reportHtml = html;
+  const overlay = document.getElementById('print-overlay');
+  const existingIframe = overlay.querySelector('iframe');
+  if (existingIframe) existingIframe.remove();
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'width:100%;height:calc(100vh - 60px);border:none;display:block;';
+  iframe.srcdoc = html;
+  overlay.querySelector('.print-toolbar-title').textContent = '📄 '+monthLabel+' রিপোর্ট';
+  overlay.appendChild(iframe);
+  overlay.style.display = 'block';
+  showToast('✅ রিপোর্ট তৈরি হয়েছে!');
+}
+function showCatDetail(catId) {
+  const entries = loadData()
+    .filter(e => e.date.slice(0,7)===currentMonth && e.type==='expense' && e.category===catId)
+    .sort((a,b) => a.date.localeCompare(b.date));
+  const cat = getCategoryInfo(catId, 'expense');
+  const total = entries.reduce((s,e) => s+e.amount, 0);
+
+  document.getElementById('cat-detail-title').innerHTML = `${cat.icon} ${cat.name}`;
+
+  const list = document.getElementById('cat-detail-list');
+  if (entries.length===0) {
+    list.innerHTML = '<div class="no-results">কোনো এন্ট্রি নেই</div>';
+  } else {
+    list.innerHTML = entries.map((e,i) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);">${i+1}. ${toBengaliDate(e.date)}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${e.note||'—'}</div>
+        </div>
+        <div style="font-size:15px;font-weight:700;color:var(--expense-color);flex-shrink:0;margin-left:8px;">-${formatTaka(e.amount)}</div>
+      </div>`).join('');
+  }
+
+  document.getElementById('cat-detail-total').innerHTML = `
+    <span style="color:var(--text-muted);font-size:13px;">${entries.length}টি এন্ট্রি</span>
+    <span style="color:var(--expense-color);">মোট: ${formatTaka(total)}</span>`;
+
+  document.getElementById('cat-detail-modal').style.display = 'flex';
+}
+function closeCatDetail() { document.getElementById('cat-detail-modal').style.display='none'; }
+
+function closePrintOverlay() { document.getElementById('print-overlay').style.display='none'; }
+function copyReportText() { showToast('📋 PDF ভিউ থেকে কপি করুন'); }
+function openInBrowser() {
+  const html = window._reportHtml||'';
+  if (!html) { showToast('প্রথমে রিপোর্ট তৈরি করুন'); return; }
+  try {
+    const blob = new Blob([html],{type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    window.open(url,'_blank');
+  } catch(e) { showToast('এই ডিভাইসে সাপোর্ট নেই'); }
+}
+</script>
+</body>
+</html>
