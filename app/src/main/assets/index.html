@@ -279,6 +279,185 @@
 <div id="print-overlay">
   <div class="print-toolbar">
     <div class="print-toolbar-title">📄 রিপোর্ট প্রিভিউ</div>
+    <button class  .mh-expense-bar { background:var(--expense-color); border-radius:10px; transition:flex 0.5s; }
+  .empty-state { text-align:center; padding:40px 20px; color:var(--text-muted); }
+  .empty-state .icon { font-size:48px; margin-bottom:12px; }
+  .empty-state p { font-size:14px; }
+  .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:var(--primary-dark); color:white; padding:12px 24px; border-radius:25px; font-size:14px; font-weight:600; z-index:1000; opacity:0; transition:opacity 0.3s; white-space:nowrap; pointer-events:none; }
+  .toast.show { opacity:1; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; display:flex; align-items:flex-end; justify-content:center; }
+  .modal { background:white; border-radius:20px 20px 0 0; padding:20px; width:100%; max-width:480px; max-height:70vh; overflow-y:auto; }
+  .modal-title { font-size:18px; font-weight:700; margin-bottom:16px; color:var(--primary-dark); }
+  .modal-close { float:right; background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); margin-top:-4px; }
+  .search-bar { position:relative; margin-bottom:12px; }
+  .search-bar input { width:100%; padding:11px 14px 11px 40px; border:2px solid var(--border); border-radius:10px; font-family:'Hind Siliguri',sans-serif; font-size:14px; background:white; }
+  .search-bar input:focus { outline:none; border-color:var(--primary-light); }
+  .search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:18px; color:var(--text-muted); }
+  .income-badge { display:inline-block; background:#e6f7ee; color:var(--income-color); font-size:10px; padding:2px 6px; border-radius:6px; font-weight:600; margin-left:4px; }
+  .no-results { text-align:center; color:var(--text-muted); padding:24px; font-size:14px; }
+
+  /* Custom Confirm Modal */
+  .confirm-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9000; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .confirm-box { background:white; border-radius:20px; padding:24px 20px 20px; width:100%; max-width:320px; box-shadow:0 10px 40px rgba(0,0,0,0.2); }
+  .confirm-icon { font-size:40px; text-align:center; margin-bottom:10px; }
+  .confirm-msg { font-size:16px; font-weight:600; color:var(--text); text-align:center; margin-bottom:20px; line-height:1.5; }
+  .confirm-btns { display:flex; gap:10px; }
+  .confirm-yes { flex:1; padding:13px; background:var(--danger); color:white; border:none; border-radius:12px; font-family:'Hind Siliguri',sans-serif; font-size:15px; font-weight:700; cursor:pointer; }
+  .confirm-no { flex:1; padding:13px; background:var(--bg); color:var(--text); border:2px solid var(--border); border-radius:12px; font-family:'Hind Siliguri',sans-serif; font-size:15px; font-weight:700; cursor:pointer; }
+
+  /* Edit mode banner */
+  .edit-banner { background:#fff8e6; border:2px solid var(--accent); border-radius:12px; padding:10px 14px; margin-bottom:12px; display:none; font-size:13px; color:#7a5c00; font-weight:600; }
+
+  #print-overlay { display:none; position:fixed; inset:0; background:white; z-index:9999; flex-direction:column; overflow-y:auto; }
+  .print-toolbar { position:sticky; top:0; background:#0f4a28; padding:10px 14px; display:flex; gap:10px; align-items:center; z-index:10000; box-shadow:0 2px 10px rgba(0,0,0,0.3); }
+  .print-toolbar-title { flex:1; color:white; font-size:15px; font-weight:700; }
+  .ptbtn { padding:9px 16px; border:none; border-radius:8px; font-family:'Hind Siliguri',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
+  .ptbtn-copy { background:#1a6b3c; color:white; }
+  .ptbtn-browser { background:#f0a500; color:white; }
+  .ptbtn-close { background:rgba(255,255,255,0.2); color:white; }
+  #rpt-body { padding:16px; max-width:800px; margin:0 auto; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="header-top">
+    <div style="display:flex;align-items:center;">
+      <div style="width:44px;height:44px;border-radius:12px;margin-right:10px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:24px;">🏠</div>
+      <div>
+        <div class="app-title">সংসার হিসাব</div>
+        <div class="app-subtitle">পারিবারিক আয়-ব্যয় ব্যবস্থাপনা</div>
+      </div>
+    </div>
+    <button class="header-month" onclick="openMonthPicker()">
+      <span id="current-month-label">মাস বেছে নিন</span> ▾
+    </button>
+  </div>
+</div>
+
+<div class="month-summary">
+  <div class="sum-card"><div class="sum-label">আয়</div><div class="sum-amount income" id="hdr-income">৳০</div></div>
+  <div class="sum-card"><div class="sum-label">খরচ</div><div class="sum-amount expense" id="hdr-expense">৳০</div></div>
+  <div class="sum-card"><div class="sum-label">ব্যালেন্স</div><div class="sum-amount balance" id="hdr-balance">৳০</div></div>
+</div>
+
+<!-- PAGE 1: ADD -->
+<div class="page active" id="page-add">
+  <div class="form-card">
+    <div class="section-title">➕ নতুন এন্ট্রি যোগ করুন</div>
+    <div class="edit-banner" id="edit-banner">✏️ এডিট মোড চালু আছে</div>
+    <div class="type-toggle">
+      <button class="type-btn expense active" id="btn-expense" onclick="setType('expense')">💸 খরচ</button>
+      <button class="type-btn income" id="btn-income" onclick="setType('income')">💰 আয়</button>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row">
+        <label class="form-label">তারিখ</label>
+        <input type="date" class="form-input" id="entry-date">
+      </div>
+      <div class="form-row">
+        <label class="form-label">পরিমাণ (টাকা)</label>
+        <input type="number" class="form-input" id="entry-amount" placeholder="০.০০" min="0" step="1">
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label" id="cat-label">খরচের খাত</label>
+      <select class="form-select" id="entry-category"><option value="">-- বেছে নিন --</option></select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">বিবরণ / নোট</label>
+      <input type="text" class="form-input" id="entry-note" placeholder="ঐচ্ছিক বিবরণ...">
+    </div>
+    <button class="submit-btn" id="submit-btn" onclick="saveEntry()">✅ সংরক্ষণ করুন</button>
+    <button class="cancel-edit-btn" id="cancel-edit-btn" onclick="cancelEdit()">✕ বাতিল করুন</button>
+  </div>
+  <div class="section-title">🕐 সাম্প্রতিক এন্ট্রি</div>
+  <div id="recent-list"></div>
+</div>
+
+<!-- PAGE 2: HISTORY -->
+<div class="page" id="page-history">
+  <div class="section-title">📋 সম্পূর্ণ ইতিহাস</div>
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search-input" placeholder="খুঁজুন..." oninput="filterHistory()">
+  </div>
+  <div class="filter-row" id="filter-row">
+    <div class="filter-chip active" onclick="setFilter('all',this)">সব</div>
+    <div class="filter-chip" onclick="setFilter('income',this)">আয়</div>
+    <div class="filter-chip" onclick="setFilter('expense',this)">খরচ</div>
+  </div>
+  <div id="history-list"></div>
+</div>
+
+<!-- PAGE 3: SUMMARY -->
+<div class="page" id="page-summary">
+  <div class="section-title">📊 মাসিক সারসংক্ষেপ</div>
+  <div class="summary-grid" id="summary-grid"></div>
+  <div class="form-card">
+    <div class="section-title">🗂️ খাত অনুযায়ী খরচ</div>
+    <div id="cat-breakdown"></div>
+  </div>
+</div>
+
+<!-- PAGE 4: MONTHLY -->
+<div class="page" id="page-monthly">
+  <div class="section-title">📅 মাসভিত্তিক রিপোর্ট</div>
+  <div id="monthly-list"></div>
+</div>
+
+<!-- PAGE 5: PDF -->
+<div class="page" id="page-pdf">
+  <div class="section-title">📄 PDF রিপোর্ট তৈরি করুন</div>
+  <div class="form-card">
+    <div class="form-row">
+      <label class="form-label">মাস নির্বাচন করুন</label>
+      <select class="form-select" id="pdf-month-sel" onchange="showPDFPreview()"></select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">রিপোর্টে কী অন্তর্ভুক্ত করবেন</label>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px;">
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;"><input type="checkbox" id="pdf-opt-summary" checked style="width:18px;height:18px;accent-color:var(--primary)"> মাসিক আয়-ব্যয় সারাংশ</label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;"><input type="checkbox" id="pdf-opt-cat" checked style="width:18px;height:18px;accent-color:var(--primary)"> খাত অনুযায়ী মোট খরচ</label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;"><input type="checkbox" id="pdf-opt-detail" checked style="width:18px;height:18px;accent-color:var(--primary)"> বিস্তারিত লেনদেনের তালিকা</label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;"><input type="checkbox" id="pdf-opt-income" checked style="width:18px;height:18px;accent-color:var(--primary)"> আয়ের বিস্তারিত তালিকা</label>
+      </div>
+    </div>
+    <button class="submit-btn" onclick="generatePDF()">📥 A4 PDF তৈরি ও ডাউনলোড করুন</button>
+  </div>
+  <div class="form-card" id="pdf-preview-card" style="display:none;">
+    <div class="section-title">👁️ প্রিভিউ</div>
+    <div id="pdf-preview-content"></div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showPage('add',this)"><span class="icon">➕</span>এন্ট্রি</button>
+  <button class="nav-btn" onclick="showPage('history',this)"><span class="icon">📋</span>ইতিহাস</button>
+  <button class="nav-btn" onclick="showPage('summary',this)"><span class="icon">📊</span>সারাংশ</button>
+  <button class="nav-btn" onclick="showPage('monthly',this)"><span class="icon">📅</span>মাসওয়ারি</button>
+  <button class="nav-btn" onclick="showPage('pdf',this)"><span class="icon">📄</span>PDF</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<!-- Custom Confirm Modal -->
+<div class="confirm-modal-overlay" id="confirm-modal" style="display:none;">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-msg" id="confirm-msg">এই এন্ট্রি মুছে দিতে চান?</div>
+    <div class="confirm-btns">
+      <button class="confirm-yes" onclick="_confirmYes()">হ্যাঁ, মুছুন</button>
+      <button class="confirm-no" onclick="_confirmNo()">না, রাখুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- Print Overlay -->
+<div id="print-overlay">
+  <div class="print-toolbar">
+    <div class="print-toolbar-title">📄 রিপোর্ট প্রিভিউ</div>
     <button class="ptbtn ptbtn-copy" onclick="copyReportText()">📋 কপি</button>
     <button class="ptbtn ptbtn-browser" onclick="openInBrowser()">📥 PDF সেভ</button>
     <button class="ptbtn ptbtn-close" onclick="closePrintOverlay()">✕ বন্ধ</button>
