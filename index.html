@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ষ<!DOCTYPE html>
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
@@ -494,18 +494,21 @@
     .rpt-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .rpt-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .rpt-sec-title { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  }
-.watermark {
+  .watermark {
     position: fixed;
-    bottom: 90px;
+    bottom: 70px;
     right: 12px;
     color: #E53935;
-    font-size: 12px;
+    font-size: 14px;      /* 12 থেকে 14 করুন */
     font-weight: 700;
     z-index: 9999;
     pointer-events: none;
     letter-spacing: 0.5px;
-}
+    text-shadow: 0 0 3px rgba(255,255,255,0.8); /* পেছনে সাদা ছায়া */
+  }
+
+
+  
 </style>
 </head>
 <body>
