@@ -494,7 +494,10 @@
     .rpt-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .rpt-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .rpt-sec-title { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .watermark {
+    .rpt-sec-title { -webkit-print-color-adjust: exact; print-co... }
+    }   /* ← এই } দিয়ে @media print বন্ধ করুন */
+
+.watermark {
     position: fixed;
     top: 10px;
     right: 10px;
