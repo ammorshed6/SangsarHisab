@@ -495,10 +495,21 @@
     .rpt-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .rpt-sec-title { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
+.watermark {
+    position: fixed;
+    bottom: 90px;
+    right: 12px;
+    color: #E53935;
+    font-size: 12px;
+    font-weight: 700;
+    z-index: 9999;
+    pointer-events: none;
+    letter-spacing: 0.5px;
+}
 </style>
 </head>
 <body>
-
+<div class="watermark">@A.M.MORSHED</div>
 <!-- App Header -->
 <div class="app-header">
   <div class="header-top">
