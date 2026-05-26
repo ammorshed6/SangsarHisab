@@ -2,109 +2,512 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>সংসার খরচের হিসাব</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<meta name="theme-color" content="#1a6b3c">
+
+<title>সংসার হিসাব</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
 
-  :root {
-    --primary: #1a6b3c;
-    --primary-light: #2d9e5f;
-    --primary-dark: #0f4a28;
-    --accent: #f0a500;
-    --accent-light: #ffc940;
-    --danger: #e03c3c;
-    --danger-light: #ff6b6b;
-    --bg: #f0f5f1;
-    --card: #ffffff;
-    --text: #1a2e22;
-    --text-muted: #6b8a75;
-    --border: #c8dfd0;
-    --income-color: #1a6b3c;
-    --expense-color: #e03c3c;
-    --shadow: 0 4px 20px rgba(26,107,60,0.10);
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+
+:root{
+  --primary:#1a6b3c;
+  --primary-light:#2d9e5f;
+  --primary-dark:#0f4a28;
+  --bg:#f0f5f1;
+  --card:#ffffff;
+  --text:#1a2e22;
+  --muted:#6b8a75;
+  --border:#c8dfd0;
+  --expense:#e03c3c;
+  --income:#1a6b3c;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+  width:100%;
+  min-height:100%;
+}
+
+body{
+  position:relative;
+  font-family:'Hind Siliguri',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  max-width:480px;
+  margin:auto;
+  padding-bottom:80px;
+}
+
+/* ===== WATERMARK FIX ===== */
+
+body::after{
+  content:"@A.M.MORSHED";
+  position:fixed;
+  top:12px;
+  right:12px;
+  font-size:11px;
+  font-weight:700;
+  color:#E53935;
+  background:rgba(255,255,255,.90);
+  padding:3px 7px;
+  border-radius:5px;
+  z-index:2147483647;
+  letter-spacing:.5px;
+  font-family:'Hind Siliguri',sans-serif;
+  box-shadow:0 1px 5px rgba(0,0,0,.15);
+  pointer-events:none;
+}
+
+/* ===== HEADER ===== */
+
+.app-header{
+  background:linear-gradient(135deg,var(--primary-dark),var(--primary),var(--primary-light));
+  color:#fff;
+  padding:20px 16px;
+  position:sticky;
+  top:0;
+  z-index:1000;
+  box-shadow:0 2px 10px rgba(0,0,0,.2);
+}
+
+.app-title{
+  font-size:22px;
+  font-weight:700;
+}
+
+.app-sub{
+  font-size:12px;
+  opacity:.8;
+  margin-top:2px;
+}
+
+/* ===== SUMMARY ===== */
+
+.summary{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+  padding:14px;
+}
+
+.card{
+  background:var(--card);
+  border-radius:14px;
+  padding:14px;
+  box-shadow:0 2px 12px rgba(0,0,0,.08);
+  border:1px solid var(--border);
+}
+
+.sum-label{
+  font-size:12px;
+  color:var(--muted);
+}
+
+.sum-value{
+  font-size:18px;
+  font-weight:700;
+  margin-top:4px;
+}
+
+.income{
+  color:var(--income);
+}
+
+.expense{
+  color:var(--expense);
+}
+
+/* ===== FORM ===== */
+
+.form{
+  padding:14px;
+}
+
+.form-group{
+  margin-bottom:14px;
+}
+
+label{
+  display:block;
+  font-size:13px;
+  margin-bottom:5px;
+  color:var(--muted);
+}
+
+input,
+select{
+  width:100%;
+  padding:12px;
+  border:2px solid var(--border);
+  border-radius:10px;
+  font-size:15px;
+  font-family:'Hind Siliguri',sans-serif;
+  background:#fff;
+}
+
+input:focus,
+select:focus{
+  outline:none;
+  border-color:var(--primary-light);
+}
+
+.btn{
+  width:100%;
+  border:none;
+  border-radius:12px;
+  padding:14px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  color:#fff;
+  font-size:16px;
+  font-weight:700;
+  cursor:pointer;
+  font-family:'Hind Siliguri',sans-serif;
+}
+
+/* ===== LIST ===== */
+
+.list{
+  padding:0 14px 20px;
+}
+
+.item{
+  background:#fff;
+  border-radius:14px;
+  padding:14px;
+  margin-bottom:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border:1px solid var(--border);
+  box-shadow:0 2px 8px rgba(0,0,0,.05);
+}
+
+.item-left{
+  flex:1;
+}
+
+.item-title{
+  font-size:15px;
+  font-weight:600;
+}
+
+.item-date{
+  font-size:11px;
+  color:var(--muted);
+  margin-top:2px;
+}
+
+.item-note{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:3px;
+}
+
+.item-amount{
+  font-size:16px;
+  font-weight:700;
+}
+
+.delete-btn{
+  border:none;
+  background:none;
+  font-size:18px;
+  cursor:pointer;
+  margin-left:10px;
+}
+
+/* ===== SECTION ===== */
+
+.section-title{
+  padding:0 14px 10px;
+  font-size:16px;
+  font-weight:700;
+  color:var(--primary-dark);
+}
+
+/* ===== TOAST ===== */
+
+.toast{
+  position:fixed;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:90px;
+  background:var(--primary-dark);
+  color:#fff;
+  padding:12px 22px;
+  border-radius:25px;
+  font-size:14px;
+  z-index:999999;
+  opacity:0;
+  transition:.3s;
+}
+
+.toast.show{
+  opacity:1;
+}
+
+/* ===== PRINT ===== */
+
+@media print{
+
+  body::after{
+    position:fixed;
+    top:10px;
+    right:10px;
+    color:#E53935 !important;
+    background:#fff !important;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
   }
 
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+}
 
-  body {
-    font-family: 'Hind Siliguri', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    max-width: 480px;
-    margin: 0 auto;
-    padding-bottom: 80px;
+</style>
+</head>
+
+<body translate="no">
+
+<div class="app-header">
+  <div class="app-title">সংসার হিসাব</div>
+  <div class="app-sub">পারিবারিক আয়-ব্যয় ব্যবস্থাপনা</div>
+</div>
+
+<div class="summary">
+
+  <div class="card">
+    <div class="sum-label">মোট আয়</div>
+    <div class="sum-value income" id="income">৳0</div>
+  </div>
+
+  <div class="card">
+    <div class="sum-label">মোট খরচ</div>
+    <div class="sum-value expense" id="expense">৳0</div>
+  </div>
+
+  <div class="card">
+    <div class="sum-label">ব্যালেন্স</div>
+    <div class="sum-value" id="balance">৳0</div>
+  </div>
+
+</div>
+
+<div class="form">
+
+  <div class="form-group">
+    <label>তারিখ</label>
+    <input type="date" id="date">
+  </div>
+
+  <div class="form-group">
+    <label>ধরণ</label>
+    <select id="type">
+      <option value="expense">খরচ</option>
+      <option value="income">আয়</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>খাত</label>
+    <input type="text" id="category" placeholder="যেমন: বাজার">
+  </div>
+
+  <div class="form-group">
+    <label>পরিমাণ</label>
+    <input type="number" id="amount" placeholder="৳0">
+  </div>
+
+  <div class="form-group">
+    <label>বিবরণ</label>
+    <input type="text" id="note" placeholder="ঐচ্ছিক">
+  </div>
+
+  <button class="btn" onclick="saveEntry()">
+    ✅ সংরক্ষণ করুন
+  </button>
+
+</div>
+
+<div class="section-title">
+  📋 হিসাবের তালিকা
+</div>
+
+<div class="list" id="list"></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+const listEl=document.getElementById('list');
+
+function loadData(){
+  try{
+    return JSON.parse(localStorage.getItem('sangsar_data')||'[]');
+  }catch(e){
+    return [];
+  }
+}
+
+function saveData(data){
+  localStorage.setItem('sangsar_data',JSON.stringify(data));
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+
+  setTimeout(()=>{
+    t.classList.remove('show');
+  },2500);
+}
+
+function formatMoney(n){
+  return '৳'+Number(n).toLocaleString('bn-BD');
+}
+
+function refresh(){
+
+  const data=loadData();
+
+  let income=0;
+  let expense=0;
+
+  data.forEach(i=>{
+    if(i.type==='income'){
+      income+=Number(i.amount);
+    }else{
+      expense+=Number(i.amount);
+    }
+  });
+
+  const balance=income-expense;
+
+  document.getElementById('income').textContent=formatMoney(income);
+  document.getElementById('expense').textContent=formatMoney(expense);
+  document.getElementById('balance').textContent=formatMoney(balance);
+
+  listEl.innerHTML='';
+
+  data.reverse().forEach(item=>{
+
+    const div=document.createElement('div');
+    div.className='item';
+
+    div.innerHTML=`
+
+      <div class="item-left">
+        <div class="item-title">
+          ${item.category}
+        </div>
+
+        <div class="item-date">
+          ${item.date}
+        </div>
+
+        <div class="item-note">
+          ${item.note||'—'}
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;">
+        <div class="item-amount ${item.type}">
+          ${item.type==='income'?'+':'-'}${formatMoney(item.amount)}
+        </div>
+
+        <button class="delete-btn" onclick="deleteEntry('${item.id}')">
+          🗑
+        </button>
+      </div>
+
+    `;
+
+    listEl.appendChild(div);
+
+  });
+
+}
+
+function saveEntry(){
+
+  const date=document.getElementById('date').value;
+  const type=document.getElementById('type').value;
+  const category=document.getElementById('category').value.trim();
+  const amount=document.getElementById('amount').value;
+  const note=document.getElementById('note').value.trim();
+
+  if(!date || !category || !amount){
+    showToast('সব তথ্য পূরণ করুন');
+    return;
   }
 
-  /* Header */
-  .app-header {
-    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, var(--primary-light) 100%);
-    color: white;
-    padding: 20px 16px 16px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 3px 15px rgba(0,0,0,0.25);
-  }
-  .header-top { display:flex; justify-content:space-between; align-items:center; }
-  .app-title { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
-  .app-subtitle { font-size: 12px; opacity: 0.8; margin-top: 2px; }
-  .header-month {
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.3);
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 14px;
-    font-family: 'Hind Siliguri', sans-serif;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  const data=loadData();
+
+  data.push({
+    id:Date.now().toString(),
+    date,
+    type,
+    category,
+    amount:Number(amount),
+    note
+  });
+
+  saveData(data);
+
+  document.getElementById('category').value='';
+  document.getElementById('amount').value='';
+  document.getElementById('note').value='';
+
+  showToast('✅ সংরক্ষণ হয়েছে');
+
+  refresh();
+
+}
+
+function deleteEntry(id){
+
+  if(!confirm('এন্ট্রি মুছে ফেলবেন?')){
+    return;
   }
 
-  /* Month summary bar */
-  .month-summary {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-    padding: 12px 16px;
-    display: flex;
-    justify-content: space-around;
-    gap: 8px;
-  }
-  .sum-card {
-    background: rgba(255,255,255,0.12);
-    border-radius: 12px;
-    padding: 10px 14px;
-    text-align: center;
-    flex: 1;
-    border: 1px solid rgba(255,255,255,0.2);
-  }
-  .sum-label { font-size: 10px; color: rgba(255,255,255,0.8); }
-  .sum-amount { font-size: 16px; font-weight: 700; color: white; margin-top: 2px; }
-  .sum-amount.income { color: #a8f0c0; }
-  .sum-amount.expense { color: #ffb3b3; }
-  .sum-amount.balance.positive { color: #a8f0c0; }
-  .sum-amount.balance.negative { color: #ffb3b3; }
+  let data=loadData();
 
-  /* Nav tabs */
-  .bottom-nav {
-    position: fixed;
-    bottom: 0; left: 50%;
-    transform: translateX(-50%);
-    width: 100%; max-width: 480px;
-    background: white;
-    display: flex;
-    border-top: 2px solid var(--border);
-    z-index: 200;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-  }
-  .nav-btn {
-    flex: 1;
-    padding: 10px 4px 8px;
-    text-align: center;
-    cursor: pointer;
+  data=data.filter(i=>i.id!==id);
+
+  saveData(data);
+
+  showToast('🗑 মুছে ফেলা হয়েছে');
+
+  refresh();
+
+}
+
+window.onload=function(){
+
+  const today=new Date();
+
+  document.getElementById('date').value=
+    today.toISOString().split('T')[0];
+
+  refresh();
+
+};
+
+</script>
+
+</body>
+</html>    cursor: pointer;
     border: none;
     background: none;
     color: var(--text-muted);
